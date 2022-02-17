@@ -26,6 +26,8 @@ export class NoteEncrypted {
   takeReference(): NativeNoteEncrypted {
     this.referenceCount++
     if (this.noteEncrypted === null) {
+      // eslint-disable-next-line no-console
+      console.log(this.noteEncryptedSerialized.toString('hex'))
       this.noteEncrypted = new NativeNoteEncrypted(Buffer.from(this.noteEncryptedSerialized))
     }
     return this.noteEncrypted
