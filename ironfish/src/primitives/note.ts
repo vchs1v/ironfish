@@ -22,7 +22,7 @@ export class Note {
     if (this.note === null) {
       // eslint-disable-next-line no-console
       console.log(this.noteSerialized.toString('hex'))
-      this.note = new NativeNote(Buffer.from(this.noteSerialized))
+      this.note = new NativeNote(this.noteSerialized)
     }
     return this.note
   }
