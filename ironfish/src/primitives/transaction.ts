@@ -38,7 +38,9 @@ export class Transaction {
     if (this.transactionPosted === null) {
       // eslint-disable-next-line no-console
       console.log(this.transactionPostedSerialized.toString('hex'))
-      this.transactionPosted = new TransactionPosted(this.transactionPostedSerialized)
+      this.transactionPosted = new TransactionPosted(
+        Buffer.from(this.transactionPostedSerialized),
+      )
     }
     return this.transactionPosted
   }
