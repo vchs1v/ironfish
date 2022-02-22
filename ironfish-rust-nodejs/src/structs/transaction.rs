@@ -193,12 +193,17 @@ impl NativeTransaction {
     /// a miner would not accept such a transaction unless it was explicitly set
     /// as the miners fee.
     #[napi(js_name = "post_miners_fee")]
-    pub fn post_miners_fee(&mut self) -> Result<NativeTransactionPosted> {
+    pub fn post_miners_fee(&mut self) -> Result<Buffer> {
         let transaction = self
             .transaction
             .post_miners_fee()
             .map_err(|err| Error::from_reason(err.to_string()))?;
-        Ok(NativeTransactionPosted { transaction })
+
+        let mut vec: Vec<u8> = vec![];
+        transaction
+            .write(&mut vec)
+            .map_err(|err| Error::from_reason(err.to_string()))?;
+        Ok(Buffer::from(vec))
     }
 
     /// Post the transaction. This performs a bit of validation, and signs
@@ -217,7 +222,7 @@ impl NativeTransaction {
         spender_hex_key: String,
         change_goes_to: Option<String>,
         intended_transaction_fee: BigInt,
-    ) -> Result<NativeTransactionPosted> {
+    ) -> Result<Buffer> {
         let intended_transaction_fee_u64 = intended_transaction_fee.get_u64().1;
 
         let spender_key = Key::from_hex(SAPLING.clone(), &spender_hex_key)
@@ -235,9 +240,12 @@ impl NativeTransaction {
             .post(&spender_key, change_key, intended_transaction_fee_u64)
             .map_err(|err| Error::from_reason(err.to_string()))?;
 
-        Ok(NativeTransactionPosted {
-            transaction: posted_transaction,
-        })
+        let mut vec: Vec<u8> = vec![];
+        posted_transaction
+            .write(&mut vec)
+            .map_err(|err| Error::from_reason(err.to_string()))?;
+
+        Ok(Buffer::from(vec))
     }
 
     #[napi]
@@ -297,14 +305,17 @@ impl NativeSimpleTransaction {
     }
 
     #[napi]
-    pub fn post(&mut self) -> Result<NativeTransactionPosted> {
+    pub fn post(&mut self) -> Result<Buffer> {
         let posted_transaction = self
             .transaction
             .post()
             .map_err(|err| Error::from_reason(err.to_string()))?;
 
-        Ok(NativeTransactionPosted {
-            transaction: posted_transaction,
-        })
+        let mut vec = vec![];
+        posted_transaction
+            .write(&mut vec)
+            .map_err(|err| Error::from_reason(err.to_string()))?;
+
+        Ok(Buffer::from(vec))
     }
 }
