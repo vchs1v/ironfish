@@ -36,8 +36,6 @@ export class Transaction {
   takeReference(): TransactionPosted {
     this.referenceCount++
     if (this.transactionPosted === null) {
-      // eslint-disable-next-line no-console
-      console.log(this.transactionPostedSerialized.toString('hex'))
       this.transactionPosted = new TransactionPosted(
         Buffer.from(this.transactionPostedSerialized),
       )
