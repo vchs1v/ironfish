@@ -36,9 +36,7 @@ export class Transaction {
   takeReference(): TransactionPosted {
     this.referenceCount++
     if (this.transactionPosted === null) {
-      this.transactionPosted = new TransactionPosted(
-        Buffer.from(this.transactionPostedSerialized),
-      )
+      this.transactionPosted = new TransactionPosted(this.transactionPostedSerialized)
     }
     return this.transactionPosted
   }
