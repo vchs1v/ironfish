@@ -9,7 +9,8 @@ use napi::bindgen_prelude::*;
 use napi_derive::napi;
 
 use ironfish_rust::sapling_bls12::{
-    Key, ProposedTransaction, PublicAddress, SimpleTransaction, Transaction, SAPLING,
+    Key, MerkleNoteHash, ProposedTransaction, PublicAddress, SimpleTransaction, Transaction,
+    SAPLING,
 };
 
 use super::note::NativeNote;
@@ -99,8 +100,19 @@ impl NativeTransactionPosted {
             .map_err(|_| Error::from_reason("Value out of range".to_string()))?;
 
         let proof = &self.transaction.spends()[index_usize];
+
+        let mut root_hash: Vec<u8> = vec![];
+
+        MerkleNoteHash::new(proof.root_hash())
+            .write(&mut root_hash)
+            .map_err(|err| Error::from_reason(err.to_string()))?;
+
+        let nullifier = Buffer::from(proof.nullifier().as_ref());
+
         Ok(NativeSpendProof {
-            proof: proof.clone(),
+            tree_size: proof.tree_size(),
+            root_hash: Buffer::from(root_hash),
+            nullifier,
         })
     }
 

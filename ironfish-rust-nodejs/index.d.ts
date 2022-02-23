@@ -9,6 +9,11 @@ export class ExternalObject<T> {
     [K: symbol]: T
   }
 }
+export interface NativeSpendProof {
+  treeSize: number
+  rootHash: Buffer
+  nullifier: Buffer
+}
 export interface Key {
   spending_key: string
   incoming_view_key: string
@@ -68,11 +73,6 @@ export class Note {
    * 'nullifier set', preventing double-spend.
    */
   nullifier(ownerPrivateKey: string, position: bigint): Buffer
-}
-export class NativeSpendProof {
-  treeSize(): number
-  rootHash(): Buffer
-  nullifier(): Buffer
 }
 export type NativeTransactionPosted = TransactionPosted
 export class TransactionPosted {
