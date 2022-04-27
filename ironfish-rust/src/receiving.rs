@@ -53,14 +53,14 @@ impl ReceiptParams {
 
         let value_commitment_randomness: jubjub::Fr = jubjub::Fr::from_bytes_wide(&buffer);
 
-        // let value_commitment = ValueCommitment {
-        //     value: note.value,
-        //     randomness: value_commitment_randomness,
-        //     asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_RANDOMNESS_GENERATOR),
-        // };
-        let value_commitment = note
-            .asset_type
-            .value_commitment(note.value, value_commitment_randomness);
+        let value_commitment = ValueCommitment {
+            value: note.value,
+            randomness: value_commitment_randomness,
+            asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_RANDOMNESS_GENERATOR),
+        };
+        // let value_commitment = note
+        //     .asset_type
+        //     .value_commitment(note.value, value_commitment_randomness);
 
         let merkle_note =
             MerkleNote::new(spender_key, note, &value_commitment, &diffie_hellman_keys);
@@ -72,8 +72,10 @@ impl ReceiptParams {
             esk: Some(diffie_hellman_keys.0),
             asset_identifier: note.asset_type.identifier_bits(),
         };
+        println!("output circuit done");
         let proof =
             groth16::create_random_proof(output_circuit, &sapling.receipt_params, &mut OsRng)?;
+        println!("proof done");
 
         let receipt_proof = ReceiptParams {
             sapling,

@@ -338,7 +338,7 @@ mod test {
             public_address,
             42,
             "serialize me".into(),
-            AssetType::new("wrapped foo".as_bytes()).unwrap(),
+            AssetType::new("foo".as_bytes()).unwrap(),
         );
         let mut serialized = Vec::new();
         note.write(&mut serialized)

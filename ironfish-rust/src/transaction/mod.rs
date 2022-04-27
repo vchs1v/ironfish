@@ -124,13 +124,19 @@ impl ProposedTransaction {
         spender_key: &SaplingKey,
         note: &Note,
     ) -> Result<(), SaplingProofError> {
+        println!("1");
         let proof = ReceiptParams::new(self.sapling.clone(), spender_key, note)?;
 
+        println!("2");
         self.increment_binding_signature_key(&proof.value_commitment_randomness, true);
+        println!("3");
         self.increment_binding_verification_key(&proof.merkle_note.value_commitment, true);
 
+        println!("4");
         self.receipts.push(proof);
+        println!("5");
         self.transaction_fee -= note.value as i64;
+        println!("6");
 
         Ok(())
     }
