@@ -101,8 +101,12 @@ impl WasmNoteEncrypted {
 
 #[cfg(test)]
 mod tests {
+    use ironfish_rust::masp_primitives::asset_type::AssetType;
+    use ironfish_rust::masp_primitives::constants::VALUE_COMMITMENT_RANDOMNESS_GENERATOR;
+    use ironfish_rust::masp_primitives::primitives::ValueCommitment;
+    use jubjub::ExtendedPoint;
     use rand::{thread_rng, Rng};
-    use zcash_primitives::primitives::ValueCommitment;
+    // use zcash_primitives::primitives::ValueCommitment;
 
     use super::*;
     use ironfish_rust::merkle_note::MerkleNote;
@@ -115,7 +119,12 @@ mod tests {
         let spender_key: SaplingKey = SaplingKey::generate_key();
         let receiver_key: SaplingKey = SaplingKey::generate_key();
         let owner = receiver_key.generate_public_address();
-        let note = Note::new(owner.clone(), 42, Memo([0; 32]));
+        let note = Note::new(
+            owner.clone(),
+            42,
+            Memo([0; 32]),
+            AssetType::new("foo".as_bytes()).unwrap(),
+        );
         let diffie_hellman_keys = owner.generate_diffie_hellman_keys();
 
         let mut buffer = [0u8; 64];
@@ -126,6 +135,7 @@ mod tests {
         let value_commitment = ValueCommitment {
             value: note.value(),
             randomness: value_commitment_randomness,
+            asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_RANDOMNESS_GENERATOR),
         };
 
         let merkle_note =

@@ -2,14 +2,21 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+use crate::{
+    masp_primitives::{
+        constants::VALUE_COMMITMENT_RANDOMNESS_GENERATOR, primitives::ValueCommitment,
+    },
+    masp_proofs::circuit::sapling::Output,
+};
+
 use super::{errors, keys::SaplingKey, merkle_note::MerkleNote, note::Note, Sapling};
 use bellman::groth16;
 use bls12_381::{Bls12, Scalar};
 use group::Curve;
 use jubjub::ExtendedPoint;
 use rand::{rngs::OsRng, thread_rng, Rng};
-use zcash_primitives::primitives::ValueCommitment;
-use zcash_proofs::circuit::sapling::Output;
+// use zcash_primitives::primitives::ValueCommitment;
+// use zcash_proofs::circuit::sapling::Output;
 
 use std::{io, sync::Arc};
 
@@ -46,10 +53,14 @@ impl ReceiptParams {
 
         let value_commitment_randomness: jubjub::Fr = jubjub::Fr::from_bytes_wide(&buffer);
 
-        let value_commitment = ValueCommitment {
-            value: note.value,
-            randomness: value_commitment_randomness,
-        };
+        // let value_commitment = ValueCommitment {
+        //     value: note.value,
+        //     randomness: value_commitment_randomness,
+        //     asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_RANDOMNESS_GENERATOR),
+        // };
+        let value_commitment = note
+            .asset_type
+            .value_commitment(note.value, value_commitment_randomness);
 
         let merkle_note =
             MerkleNote::new(spender_key, note, &value_commitment, &diffie_hellman_keys);
@@ -59,6 +70,7 @@ impl ReceiptParams {
             payment_address: Some(note.owner.sapling_payment_address()),
             commitment_randomness: Some(note.randomness),
             esk: Some(diffie_hellman_keys.0),
+            asset_identifier: note.asset_type.identifier_bits(),
         };
         let proof =
             groth16::create_random_proof(output_circuit, &sapling.receipt_params, &mut OsRng)?;
@@ -184,6 +196,7 @@ mod test {
     use super::{ReceiptParams, ReceiptProof};
     use crate::{
         keys::SaplingKey,
+        masp_primitives::asset_type::AssetType,
         note::{Memo, Note},
         sapling_bls12,
     };
@@ -195,7 +208,12 @@ mod test {
     fn test_receipt_round_trip() {
         let sapling = &*sapling_bls12::SAPLING;
         let spender_key: SaplingKey = SaplingKey::generate_key();
-        let note = Note::new(spender_key.generate_public_address(), 42, Memo([0; 32]));
+        let note = Note::new(
+            spender_key.generate_public_address(),
+            42,
+            Memo([0; 32]),
+            AssetType::new("foo".as_bytes()).unwrap(),
+        );
 
         let receipt = ReceiptParams::new(sapling.clone(), &spender_key, &note)
             .expect("should be able to create receipt proof");

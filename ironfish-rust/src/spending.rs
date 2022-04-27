@@ -20,12 +20,15 @@ use group::{Curve, GroupEncoding};
 use jubjub::ExtendedPoint;
 use rand::{rngs::OsRng, thread_rng, Rng};
 
-use zcash_proofs::circuit::sapling::Spend;
+// use zcash_proofs::circuit::sapling::Spend;
+use crate::masp_proofs::circuit::sapling::Spend;
 
 use ff::PrimeField;
 use std::{io, sync::Arc};
-use zcash_primitives::constants::SPENDING_KEY_GENERATOR;
-use zcash_primitives::primitives::{Nullifier, ValueCommitment};
+use zcash_primitives::constants::{SPENDING_KEY_GENERATOR, VALUE_COMMITMENT_RANDOMNESS_GENERATOR};
+// use zcash_primitives::primitives::{Nullifier, ValueCommitment};
+use crate::masp_primitives::primitives::ValueCommitment;
+use zcash_primitives::primitives::Nullifier;
 use zcash_primitives::redjubjub;
 
 /// Parameters used when constructing proof that the spender owns a note with
@@ -98,6 +101,7 @@ impl<'a> SpendParams {
         thread_rng().fill(&mut buffer[..]);
 
         let value_commitment = ValueCommitment {
+            asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_RANDOMNESS_GENERATOR),
             value: note.value,
             randomness: jubjub::Fr::from_bytes_wide(&buffer),
         };
@@ -407,6 +411,7 @@ mod test {
     use super::{SpendParams, SpendProof};
     use crate::{
         keys::SaplingKey,
+        masp_primitives::asset_type::AssetType,
         note::{Memo, Note},
         sapling_bls12,
         test_util::make_fake_witness,
@@ -424,7 +429,12 @@ mod test {
 
         let note_randomness = random();
 
-        let note = Note::new(public_address, note_randomness, Memo([0; 32]));
+        let note = Note::new(
+            public_address,
+            note_randomness,
+            Memo([0; 32]),
+            AssetType::new("foo".as_bytes()).unwrap(),
+        );
         let witness = make_fake_witness(&note);
 
         let spend = SpendParams::new(sapling.clone(), key, &note, &witness)

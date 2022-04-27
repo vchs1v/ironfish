@@ -6,6 +6,7 @@
 use super::{ProposedTransaction, Transaction};
 use crate::{
     keys::SaplingKey,
+    masp_primitives::asset_type::AssetType,
     merkle_note::NOTE_ENCRYPTION_MINER_KEYS,
     note::{Memo, Note},
     sapling_bls12,
@@ -20,9 +21,24 @@ fn test_transaction() {
     let mut transaction = ProposedTransaction::new(sapling.clone());
     let spender_key: SaplingKey = SaplingKey::generate_key();
     let receiver_key: SaplingKey = SaplingKey::generate_key();
-    let in_note = Note::new(spender_key.generate_public_address(), 42, Memo([0; 32]));
-    let out_note = Note::new(receiver_key.generate_public_address(), 40, Memo([0; 32]));
-    let in_note2 = Note::new(spender_key.generate_public_address(), 18, Memo([0; 32]));
+    let in_note = Note::new(
+        spender_key.generate_public_address(),
+        42,
+        Memo([0; 32]),
+        AssetType::new("foo".as_bytes()).unwrap(),
+    );
+    let out_note = Note::new(
+        receiver_key.generate_public_address(),
+        40,
+        Memo([0; 32]),
+        AssetType::new("foo".as_bytes()).unwrap(),
+    );
+    let in_note2 = Note::new(
+        spender_key.generate_public_address(),
+        18,
+        Memo([0; 32]),
+        AssetType::new("foo".as_bytes()).unwrap(),
+    );
     let witness = make_fake_witness(&in_note);
     let _witness2 = make_fake_witness(&in_note2);
     transaction
@@ -93,7 +109,14 @@ fn test_miners_fee() {
     let sapling = &*sapling_bls12::SAPLING;
     let mut transaction = ProposedTransaction::new(sapling.clone());
     let receiver_key: SaplingKey = SaplingKey::generate_key();
-    let out_note = Note::new(receiver_key.generate_public_address(), 42, Memo([0; 32]));
+    let asset_type_result = AssetType::new("foo".as_bytes()).unwrap();
+    println!("asset type result {:?}", asset_type_result);
+    let out_note = Note::new(
+        receiver_key.generate_public_address(),
+        42,
+        Memo([0; 32]),
+        AssetType::new("foo".as_bytes()).unwrap(),
+    );
     transaction
         .receive(&receiver_key, &out_note)
         .expect("It's a valid note");
@@ -121,8 +144,18 @@ fn test_transaction_signature() {
     let receiver_address = receiver_key.generate_public_address();
 
     let mut transaction = ProposedTransaction::new(sapling);
-    let in_note = Note::new(spender_address, 42, Memo([0; 32]));
-    let out_note = Note::new(receiver_address, 41, Memo([0; 32]));
+    let in_note = Note::new(
+        spender_address,
+        42,
+        Memo([0; 32]),
+        AssetType::new("foo".as_bytes()).unwrap(),
+    );
+    let out_note = Note::new(
+        receiver_address,
+        41,
+        Memo([0; 32]),
+        AssetType::new("foo".as_bytes()).unwrap(),
+    );
     let witness = make_fake_witness(&in_note);
 
     transaction

@@ -12,11 +12,15 @@ use byteorder::{ByteOrder, LittleEndian, ReadBytesExt, WriteBytesExt};
 use ff::PrimeField;
 use jubjub::SubgroupPoint;
 use rand::{thread_rng, Rng};
-use zcash_primitives::primitives::{Note as SaplingNote, Nullifier, Rseed};
+// use zcash_primitives::primitives::{Note as SaplingNote, Nullifier, Rseed};
+use crate::masp_primitives::asset_type::AssetType;
+use crate::masp_primitives::primitives::Note as SaplingNote;
+use zcash_primitives::primitives::{Nullifier, Rseed};
 
 use std::{fmt, io, io::Read};
 
-pub const ENCRYPTED_NOTE_SIZE: usize = 83;
+// pub const ENCRYPTED_NOTE_SIZE: usize = 83;
+pub const ENCRYPTED_NOTE_SIZE: usize = 115;
 
 /// Memo field on a Note. Used to encode transaction IDs or other information
 /// about the transaction.
@@ -69,6 +73,8 @@ pub struct Note {
     /// anything else about it.
     pub(crate) randomness: jubjub::Fr,
 
+    pub(crate) asset_type: AssetType,
+
     /// Arbitrary note the spender can supply when constructing a spend so the
     /// receiver has some record from whence it came.
     /// Note: While this is encrypted with the output, it is not encoded into
@@ -78,7 +84,7 @@ pub struct Note {
 
 impl<'a> Note {
     /// Construct a new Note.
-    pub fn new(owner: PublicAddress, value: u64, memo: Memo) -> Self {
+    pub fn new(owner: PublicAddress, value: u64, memo: Memo, asset_type: AssetType) -> Self {
         let mut buffer = [0u8; 64];
         thread_rng().fill(&mut buffer[..]);
 
@@ -88,6 +94,7 @@ impl<'a> Note {
             owner,
             value,
             randomness,
+            asset_type,
             memo,
         }
     }
@@ -101,6 +108,16 @@ impl<'a> Note {
         let value = reader.read_u64::<LittleEndian>()?;
         let randomness: jubjub::Fr = read_scalar(&mut reader)?;
 
+        // let mut asset_type_vec = vec![0; 32];
+        // TODO: not a vec
+        let mut asset_type_vec: [u8; 32] = [0; 32];
+        // let mut asset_type = AssetType([0; 32]);
+        reader.read_exact(&mut asset_type_vec).unwrap();
+        assert_eq!(asset_type_vec.len(), 32);
+        // asset_type.0.copy_from_slice(&asset_type_vec[..]);
+        // let asset_type = AssetType::new(&asset_type_vec).unwrap();
+        let asset_type = AssetType::from_identifier(&asset_type_vec).unwrap();
+
         let mut memo_vec = vec![];
         let mut memo = Memo([0; 32]);
         reader.read_to_end(&mut memo_vec)?;
@@ -111,6 +128,7 @@ impl<'a> Note {
             owner,
             value,
             randomness,
+            asset_type,
             memo,
         })
     }
@@ -124,6 +142,7 @@ impl<'a> Note {
         self.owner.write(&mut writer)?;
         writer.write_u64::<LittleEndian>(self.value)?;
         writer.write_all(self.randomness.to_repr().as_ref())?;
+        writer.write_all(self.asset_type.get_identifier())?;
         writer.write_all(&self.memo.0)?;
         Ok(())
     }
@@ -142,7 +161,7 @@ impl<'a> Note {
         shared_secret: &[u8; 32],
         encrypted_bytes: &[u8; ENCRYPTED_NOTE_SIZE + aead::MAC_SIZE],
     ) -> Result<Self, errors::NoteError> {
-        let (diversifier_bytes, randomness, value, memo) =
+        let (diversifier_bytes, randomness, value, memo, asset_type) =
             Note::decrypt_note_parts(shared_secret, encrypted_bytes)?;
         let owner = owner_view_key.public_address(&diversifier_bytes)?;
 
@@ -150,6 +169,7 @@ impl<'a> Note {
             owner,
             value,
             randomness,
+            asset_type,
             memo,
         })
     }
@@ -168,7 +188,7 @@ impl<'a> Note {
         shared_secret: &[u8; 32],
         encrypted_bytes: &[u8; ENCRYPTED_NOTE_SIZE + aead::MAC_SIZE],
     ) -> Result<Self, errors::NoteError> {
-        let (diversifier_bytes, randomness, value, memo) =
+        let (diversifier_bytes, randomness, value, memo, asset_type) =
             Note::decrypt_note_parts(shared_secret, encrypted_bytes)?;
         let (diversifier, diversifier_point) =
             PublicAddress::load_diversifier(&diversifier_bytes[..])?;
@@ -182,6 +202,7 @@ impl<'a> Note {
             owner,
             value,
             randomness,
+            asset_type,
             memo,
         })
     }
@@ -207,7 +228,8 @@ impl<'a> Note {
         bytes_to_encrypt[11..43].clone_from_slice(self.randomness.to_repr().as_ref());
 
         LittleEndian::write_u64_into(&[self.value], &mut bytes_to_encrypt[43..51]);
-        bytes_to_encrypt[51..].copy_from_slice(&self.memo.0[..]);
+        bytes_to_encrypt[51..83].copy_from_slice(self.asset_type.get_identifier());
+        bytes_to_encrypt[83..].copy_from_slice(&self.memo.0[..]);
         let mut encrypted_bytes = [0; ENCRYPTED_NOTE_SIZE + aead::MAC_SIZE];
         aead::encrypt(shared_secret, &bytes_to_encrypt, &mut encrypted_bytes);
 
@@ -252,7 +274,7 @@ impl<'a> Note {
     fn decrypt_note_parts(
         shared_secret: &[u8; 32],
         encrypted_bytes: &[u8; ENCRYPTED_NOTE_SIZE + aead::MAC_SIZE],
-    ) -> Result<([u8; 11], jubjub::Fr, u64, Memo), errors::NoteError> {
+    ) -> Result<([u8; 11], jubjub::Fr, u64, Memo, AssetType), errors::NoteError> {
         let mut plaintext_bytes = [0; ENCRYPTED_NOTE_SIZE];
         aead::decrypt(shared_secret, encrypted_bytes, &mut plaintext_bytes)?;
 
@@ -262,12 +284,24 @@ impl<'a> Note {
 
         let randomness: jubjub::Fr = read_scalar(&mut reader)?;
         let value = reader.read_u64::<LittleEndian>()?;
+
+        // let mut asset_type_vec = vec![0; 32];
+        // TODO: not a vec
+        let mut asset_type_vec: [u8; 32] = [0; 32];
+        // let mut asset_type = AssetType([0; 32]);
+        reader.read_exact(&mut asset_type_vec).unwrap();
+        assert_eq!(asset_type_vec.len(), 32);
+        // asset_type.0.copy_from_slice(&asset_type_vec[..]);
+        // let asset_type = AssetType::new(&asset_type_vec).unwrap();
+        let asset_type = AssetType::from_identifier(&asset_type_vec).unwrap();
+
         let mut memo_vec = vec![];
         let mut memo = Memo([0; 32]);
         reader.read_to_end(&mut memo_vec)?;
         assert_eq!(memo_vec.len(), 32);
         memo.0.copy_from_slice(&memo_vec[..]);
-        Ok((diversifier_bytes, randomness, value, memo))
+
+        Ok((diversifier_bytes, randomness, value, memo, asset_type))
     }
 
     /// The zcash_primitives version of the Note API is kind of klunky with
@@ -279,6 +313,7 @@ impl<'a> Note {
     /// being spent have to create these.
     fn sapling_note(&self) -> SaplingNote {
         SaplingNote {
+            asset_type: self.asset_type,
             value: self.value,
             g_d: self.owner.diversifier.g_d().unwrap(),
             pk_d: self.owner.transmission_key,
@@ -290,13 +325,21 @@ impl<'a> Note {
 #[cfg(test)]
 mod test {
     use super::{Memo, Note};
-    use crate::keys::{shared_secret, SaplingKey};
+    use crate::{
+        keys::{shared_secret, SaplingKey},
+        masp_primitives::asset_type::AssetType,
+    };
 
     #[test]
     fn test_plaintext_serialization() {
         let owner_key: SaplingKey = SaplingKey::generate_key();
         let public_address = owner_key.generate_public_address();
-        let note = Note::new(public_address, 42, "serialize me".into());
+        let note = Note::new(
+            public_address,
+            42,
+            "serialize me".into(),
+            AssetType::new("wrapped foo".as_bytes()).unwrap(),
+        );
         let mut serialized = Vec::new();
         note.write(&mut serialized)
             .expect("Should serialize cleanly");
@@ -305,6 +348,7 @@ mod test {
         assert_eq!(note2.owner.public_address(), note.owner.public_address());
         assert_eq!(note2.value, 42);
         assert_eq!(note2.randomness, note.randomness);
+        assert_eq!(note2.asset_type, note.asset_type);
         assert_eq!(note2.memo, note.memo);
 
         let mut serialized2 = Vec::new();
@@ -321,7 +365,12 @@ mod test {
         let (dh_secret, dh_public) = public_address.generate_diffie_hellman_keys();
         let public_shared_secret =
             shared_secret(&dh_secret, &public_address.transmission_key, &dh_public);
-        let note = Note::new(public_address, 42, Memo([0; 32]));
+        let note = Note::new(
+            public_address,
+            42,
+            Memo([0; 32]),
+            AssetType::new("foo".as_bytes()).unwrap(),
+        );
         let encryption_result = note.encrypt(&public_shared_secret);
 
         let private_shared_secret = owner_key.incoming_view_key().shared_secret(&dh_public);
@@ -337,6 +386,7 @@ mod test {
             restored_note.owner.public_address().as_ref() == note.owner.public_address().as_ref()
         );
         assert!(note.value == restored_note.value);
+        assert!(note.asset_type == restored_note.asset_type);
         assert!(note.randomness == restored_note.randomness);
         assert!(note.memo == restored_note.memo);
 

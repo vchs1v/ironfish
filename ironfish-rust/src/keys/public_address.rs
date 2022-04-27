@@ -2,11 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-use crate::serializing::{bytes_to_hex, hex_to_bytes, point_to_bytes};
+use crate::{
+    masp_primitives::primitives::{Diversifier, PaymentAddress},
+    serializing::{bytes_to_hex, hex_to_bytes, point_to_bytes},
+};
 use group::GroupEncoding;
 use jubjub::SubgroupPoint;
 use rand::{thread_rng, Rng};
-use zcash_primitives::primitives::{Diversifier, PaymentAddress};
+// use zcash_primitives::primitives::Diversifier;
 
 use std::{convert::TryInto, io};
 

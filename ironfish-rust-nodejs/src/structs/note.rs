@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+use ironfish_rust::masp_primitives::asset_type::AssetType;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 
@@ -22,7 +23,12 @@ impl NativeNote {
         let owner_address = ironfish_rust::PublicAddress::from_hex(&owner)
             .map_err(|err| Error::from_reason(err.to_string()))?;
         Ok(NativeNote {
-            note: Note::new(owner_address, value_u64, Memo::from(memo)),
+            note: Note::new(
+                owner_address,
+                value_u64,
+                Memo::from(memo),
+                AssetType::new("foo".as_bytes()).unwrap(),
+            ),
         })
     }
 

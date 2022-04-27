@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
+use crate::masp_primitives::asset_type::AssetType;
+
 use super::{
     errors::{SaplingProofError, TransactionError},
     keys::{PublicAddress, SaplingKey},
@@ -166,6 +168,7 @@ impl ProposedTransaction {
                 change_address,
                 change_amount as u64, // we checked it was positive
                 Memo([0; 32]),
+                AssetType::new("foo".as_bytes()).unwrap(),
             );
             self.receive(spender_key, &change_note)?;
         }

@@ -13,12 +13,13 @@ use super::{
     MerkleNoteHash,
 };
 
+use crate::masp_primitives::{asset_type::AssetType, primitives::ValueCommitment};
 use blake2b_simd::Params as Blake2b;
 use bls12_381::Scalar;
 use ff::PrimeField;
 use group::GroupEncoding;
 use jubjub::{ExtendedPoint, SubgroupPoint};
-use zcash_primitives::primitives::ValueCommitment;
+// use zcash_primitives::primitives::ValueCommitment;
 
 use std::{convert::TryInto, io};
 
@@ -199,6 +200,10 @@ impl MerkleNote {
         let shared_key = shared_secret(&secret_key, &transmission_key, &self.ephemeral_public_key);
         let note =
             Note::from_spender_encrypted(transmission_key, &shared_key, &self.encrypted_note)?;
+        println!("NEW NOTE");
+        println!("RECEIVER PUBLIC KEY: {:?}", note.owner());
+        println!("VALUE: {:?}", note.value());
+        println!("MEMO: {:?}", String::from_utf8_lossy(&note.memo().0));
         note.verify_commitment(self.note_commitment)?;
         Ok(note)
     }
@@ -269,19 +274,29 @@ mod test {
     use super::MerkleNote;
     use crate::{
         keys::SaplingKey,
+        masp_primitives::{
+            constants::VALUE_COMMITMENT_RANDOMNESS_GENERATOR, primitives::ValueCommitment,
+        },
         note::{Memo, Note},
     };
 
+    use crate::masp_primitives::asset_type::AssetType;
     use bls12_381::Scalar;
+    use jubjub::ExtendedPoint;
     use rand::prelude::*;
     use rand::{thread_rng, Rng};
-    use zcash_primitives::primitives::ValueCommitment;
+    // use zcash_primitives::primitives::ValueCommitment;
 
     #[test]
     fn test_view_key_encryption() {
         let spender_key: SaplingKey = SaplingKey::generate_key();
         let receiver_key: SaplingKey = SaplingKey::generate_key();
-        let note = Note::new(receiver_key.generate_public_address(), 42, Memo([0; 32]));
+        let note = Note::new(
+            receiver_key.generate_public_address(),
+            42,
+            Memo([0; 32]),
+            AssetType::new("foo".as_bytes()).unwrap(),
+        );
         let diffie_hellman_keys = note.owner.generate_diffie_hellman_keys();
 
         let mut buffer = [0u8; 64];
@@ -292,6 +307,7 @@ mod test {
         let value_commitment = ValueCommitment {
             value: note.value,
             randomness: value_commitment_randomness,
+            asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_RANDOMNESS_GENERATOR),
         };
 
         let merkle_note =
@@ -307,7 +323,12 @@ mod test {
     #[test]
     fn test_receipt_invalid_commitment() {
         let spender_key: SaplingKey = SaplingKey::generate_key();
-        let note = Note::new(spender_key.generate_public_address(), 42, Memo([0; 32]));
+        let note = Note::new(
+            spender_key.generate_public_address(),
+            42,
+            Memo([0; 32]),
+            AssetType::new("foo".as_bytes()).unwrap(),
+        );
         let diffie_hellman_keys = note.owner.generate_diffie_hellman_keys();
 
         let mut buffer = [0u8; 64];
@@ -318,6 +339,7 @@ mod test {
         let value_commitment = ValueCommitment {
             value: note.value,
             randomness: value_commitment_randomness,
+            asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_RANDOMNESS_GENERATOR),
         };
 
         let mut merkle_note =

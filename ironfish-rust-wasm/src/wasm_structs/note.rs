@@ -3,6 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 use super::{panic_hook, WasmIoError, WasmSaplingKeyError};
+use ironfish_rust::masp_primitives::asset_type::AssetType;
 use ironfish_rust::note::Memo;
 use ironfish_rust::sapling_bls12::{Key, Note};
 use wasm_bindgen::prelude::*;
@@ -21,7 +22,12 @@ impl WasmNote {
         let owner_address =
             ironfish_rust::PublicAddress::from_hex(owner).map_err(WasmSaplingKeyError)?;
         Ok(WasmNote {
-            note: Note::new(owner_address, value, Memo::from(memo)),
+            note: Note::new(
+                owner_address,
+                value,
+                Memo::from(memo),
+                AssetType::new("foo".as_bytes()).unwrap(),
+            ),
         })
     }
 
