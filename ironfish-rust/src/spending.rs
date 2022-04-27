@@ -21,11 +21,14 @@ use jubjub::ExtendedPoint;
 use rand::{rngs::OsRng, thread_rng, Rng};
 
 // use zcash_proofs::circuit::sapling::Spend;
-use crate::masp_proofs::circuit::sapling::Spend;
+use crate::{
+    masp_primitives::constants::VALUE_COMMITMENT_VALUE_GENERATOR,
+    masp_proofs::circuit::sapling::Spend,
+};
 
 use ff::PrimeField;
 use std::{io, sync::Arc};
-use zcash_primitives::constants::{SPENDING_KEY_GENERATOR, VALUE_COMMITMENT_RANDOMNESS_GENERATOR};
+use zcash_primitives::constants::SPENDING_KEY_GENERATOR;
 // use zcash_primitives::primitives::{Nullifier, ValueCommitment};
 use crate::masp_primitives::primitives::ValueCommitment;
 use zcash_primitives::primitives::Nullifier;
@@ -101,7 +104,7 @@ impl<'a> SpendParams {
         thread_rng().fill(&mut buffer[..]);
 
         let value_commitment = ValueCommitment {
-            asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_RANDOMNESS_GENERATOR),
+            asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_VALUE_GENERATOR),
             value: note.value,
             randomness: jubjub::Fr::from_bytes_wide(&buffer),
         };

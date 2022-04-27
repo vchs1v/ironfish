@@ -102,7 +102,9 @@ impl WasmNoteEncrypted {
 #[cfg(test)]
 mod tests {
     use ironfish_rust::masp_primitives::asset_type::AssetType;
-    use ironfish_rust::masp_primitives::constants::VALUE_COMMITMENT_RANDOMNESS_GENERATOR;
+    use ironfish_rust::masp_primitives::constants::{
+        VALUE_COMMITMENT_RANDOMNESS_GENERATOR, VALUE_COMMITMENT_VALUE_GENERATOR,
+    };
     use ironfish_rust::masp_primitives::primitives::ValueCommitment;
     use jubjub::ExtendedPoint;
     use rand::{thread_rng, Rng};
@@ -135,7 +137,8 @@ mod tests {
         let value_commitment = ValueCommitment {
             value: note.value(),
             randomness: value_commitment_randomness,
-            asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_RANDOMNESS_GENERATOR),
+            // asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_RANDOMNESS_GENERATOR),
+            asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_VALUE_GENERATOR),
         };
 
         let merkle_note =

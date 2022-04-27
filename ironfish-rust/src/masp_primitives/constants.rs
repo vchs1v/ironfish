@@ -5,6 +5,24 @@ use group::Group;
 use jubjub::SubgroupPoint;
 use lazy_static::lazy_static;
 
+// TODO: FDLSMFS
+/// The value commitment is used to check balance between inputs and outputs. The value is
+/// placed over this generator.
+pub const VALUE_COMMITMENT_VALUE_GENERATOR: SubgroupPoint = SubgroupPoint::from_raw_unchecked(
+    bls12_381::Scalar::from_raw([
+        0x3618_3b2c_b4d7_ef51,
+        0x9472_c89a_c043_042d,
+        0xd861_8ed1_d15f_ef4e,
+        0x273f_910d_9ecc_1615,
+    ]),
+    bls12_381::Scalar::from_raw([
+        0xa77a_81f5_0667_c8d7,
+        0xbc33_32d0_fa1c_cd18,
+        0xd322_94fd_8977_4ad6,
+        0x466a_7e3a_82f6_7ab1,
+    ]),
+);
+
 /// First 64 bytes of the BLAKE2s input during group hash.
 /// This is chosen to be some random string that we couldn't have anticipated when we designed
 /// the algorithm, for rigidity purposes.

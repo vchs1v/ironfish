@@ -275,7 +275,8 @@ mod test {
     use crate::{
         keys::SaplingKey,
         masp_primitives::{
-            constants::VALUE_COMMITMENT_RANDOMNESS_GENERATOR, primitives::ValueCommitment,
+            constants::{VALUE_COMMITMENT_RANDOMNESS_GENERATOR, VALUE_COMMITMENT_VALUE_GENERATOR},
+            primitives::ValueCommitment,
         },
         note::{Memo, Note},
     };
@@ -307,7 +308,7 @@ mod test {
         let value_commitment = ValueCommitment {
             value: note.value,
             randomness: value_commitment_randomness,
-            asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_RANDOMNESS_GENERATOR),
+            asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_VALUE_GENERATOR),
         };
 
         let merkle_note =
