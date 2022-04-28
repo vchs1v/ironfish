@@ -340,7 +340,7 @@ mod test {
         let value_commitment = ValueCommitment {
             value: note.value,
             randomness: value_commitment_randomness,
-            asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_RANDOMNESS_GENERATOR),
+            asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_VALUE_GENERATOR),
         };
 
         let mut merkle_note =

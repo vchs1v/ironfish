@@ -85,6 +85,7 @@ pub struct Note {
 impl<'a> Note {
     /// Construct a new Note.
     pub fn new(owner: PublicAddress, value: u64, memo: Memo, asset_type: AssetType) -> Self {
+        println!("AAAA");
         let mut buffer = [0u8; 64];
         thread_rng().fill(&mut buffer[..]);
 
@@ -223,14 +224,22 @@ impl<'a> Note {
     /// the tree. Only someone with the incoming viewing key for the note can
     /// actually read the contents.
     pub fn encrypt(&self, shared_secret: &[u8; 32]) -> [u8; ENCRYPTED_NOTE_SIZE + aead::MAC_SIZE] {
+        println!(
+            "E {:?} {:?} {:?}",
+            self.randomness,
+            self.value,
+            self.asset_type.get_identifier()
+        );
         let mut bytes_to_encrypt = [0; ENCRYPTED_NOTE_SIZE];
         bytes_to_encrypt[..11].copy_from_slice(&self.owner.diversifier.0[..]);
         bytes_to_encrypt[11..43].clone_from_slice(self.randomness.to_repr().as_ref());
 
         LittleEndian::write_u64_into(&[self.value], &mut bytes_to_encrypt[43..51]);
-        bytes_to_encrypt[51..83].copy_from_slice(self.asset_type.get_identifier());
+        bytes_to_encrypt[51..83].copy_from_slice(&self.asset_type.get_identifier()[..]);
         bytes_to_encrypt[83..].copy_from_slice(&self.memo.0[..]);
         let mut encrypted_bytes = [0; ENCRYPTED_NOTE_SIZE + aead::MAC_SIZE];
+
+        // println!("ENCRYPT {:?}", bytes_to_encrypt);
         aead::encrypt(shared_secret, &bytes_to_encrypt, &mut encrypted_bytes);
 
         encrypted_bytes
@@ -277,6 +286,7 @@ impl<'a> Note {
     ) -> Result<([u8; 11], jubjub::Fr, u64, Memo, AssetType), errors::NoteError> {
         let mut plaintext_bytes = [0; ENCRYPTED_NOTE_SIZE];
         aead::decrypt(shared_secret, encrypted_bytes, &mut plaintext_bytes)?;
+        // println!("DECRYPT: {:?}", plaintext_bytes);
 
         let mut reader = plaintext_bytes[..].as_ref();
         let mut diversifier_bytes = [0; 11];
@@ -301,6 +311,12 @@ impl<'a> Note {
         assert_eq!(memo_vec.len(), 32);
         memo.0.copy_from_slice(&memo_vec[..]);
 
+        println!(
+            "D {:?} {:?} {:?}",
+            randomness,
+            value,
+            asset_type.get_identifier(),
+        );
         Ok((diversifier_bytes, randomness, value, memo, asset_type))
     }
 
