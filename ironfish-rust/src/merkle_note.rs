@@ -305,11 +305,15 @@ mod test {
 
         let value_commitment_randomness: jubjub::Fr = jubjub::Fr::from_bytes_wide(&buffer);
 
-        let value_commitment = ValueCommitment {
-            value: note.value,
-            randomness: value_commitment_randomness,
-            asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_VALUE_GENERATOR),
-        };
+        // let value_commitment = ValueCommitment {
+        //     value: note.value,
+        //     randomness: value_commitment_randomness,
+        //     // asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_VALUE_GENERATOR),
+        //     asset_generator: VALUE_COMMITMENT_VALUE_GENERATOR.into(),
+        // };
+        let value_commitment = note
+            .asset_type
+            .value_commitment(note.value, value_commitment_randomness);
 
         let merkle_note =
             MerkleNote::new(&spender_key, &note, &value_commitment, &diffie_hellman_keys);
@@ -340,7 +344,8 @@ mod test {
         let value_commitment = ValueCommitment {
             value: note.value,
             randomness: value_commitment_randomness,
-            asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_VALUE_GENERATOR),
+            // asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_VALUE_GENERATOR),
+            asset_generator: VALUE_COMMITMENT_VALUE_GENERATOR.into(),
         };
 
         let mut merkle_note =

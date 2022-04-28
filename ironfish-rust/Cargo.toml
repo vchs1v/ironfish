@@ -39,6 +39,7 @@ proptest = { version = "1.0.0"}
 aes = "0.7"
 fpe = "0.5"
 itertools = "0.10.1"
+rand_xorshift = "0.3"
 
 [patch.crates-io]
 bellman = { git = "https://github.com/iron-fish/bellman", rev = "368a62fb1821eaae495c60ada82d85faaea8b616" }

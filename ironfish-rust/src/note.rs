@@ -85,7 +85,6 @@ pub struct Note {
 impl<'a> Note {
     /// Construct a new Note.
     pub fn new(owner: PublicAddress, value: u64, memo: Memo, asset_type: AssetType) -> Self {
-        println!("AAAA");
         let mut buffer = [0u8; 64];
         thread_rng().fill(&mut buffer[..]);
 
@@ -224,12 +223,6 @@ impl<'a> Note {
     /// the tree. Only someone with the incoming viewing key for the note can
     /// actually read the contents.
     pub fn encrypt(&self, shared_secret: &[u8; 32]) -> [u8; ENCRYPTED_NOTE_SIZE + aead::MAC_SIZE] {
-        println!(
-            "E {:?} {:?} {:?}",
-            self.randomness,
-            self.value,
-            self.asset_type.get_identifier()
-        );
         let mut bytes_to_encrypt = [0; ENCRYPTED_NOTE_SIZE];
         bytes_to_encrypt[..11].copy_from_slice(&self.owner.diversifier.0[..]);
         bytes_to_encrypt[11..43].clone_from_slice(self.randomness.to_repr().as_ref());
@@ -311,12 +304,6 @@ impl<'a> Note {
         assert_eq!(memo_vec.len(), 32);
         memo.0.copy_from_slice(&memo_vec[..]);
 
-        println!(
-            "D {:?} {:?} {:?}",
-            randomness,
-            value,
-            asset_type.get_identifier(),
-        );
         Ok((diversifier_bytes, randomness, value, memo, asset_type))
     }
 

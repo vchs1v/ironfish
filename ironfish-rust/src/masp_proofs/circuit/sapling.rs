@@ -607,11 +607,11 @@ impl Circuit<bls12_381::Scalar> for Output {
 //         primitives::{Diversifier, Note, ProofGenerationKey},
 //     };
 //     use bellman::gadgets::test::*;
-//     use ff::{to_le_bits, Field, PrimeField};
+//     use ff::{Field, PrimeField};
 //     use group::Group;
 //     use rand_core::{RngCore, SeedableRng};
 //     use rand_xorshift::XorShiftRng;
-//     use zcash_primitives::sapling::Rseed;
+//     use zcash_primitives::primitives::Rseed;
 
 //     let mut rng = XorShiftRng::from_seed([
 //         0x58, 0x62, 0xbe, 0x3d, 0x76, 0x3d, 0x31, 0x8d, 0x17, 0xdb, 0x37, 0x32, 0x54, 0x06, 0xbc,

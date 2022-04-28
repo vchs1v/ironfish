@@ -13,7 +13,10 @@ use group::GroupEncoding;
 use jubjub::SubgroupPoint;
 use rand::prelude::*;
 // use rand_core::{OsRng, RngCore};
-use zcash_primitives::constants::{
+// use zcash_primitives::constants::{
+//     CRH_IVK_PERSONALIZATION, PROOF_GENERATION_KEY_GENERATOR, SPENDING_KEY_GENERATOR,
+// };
+use crate::masp_primitives::constants::{
     CRH_IVK_PERSONALIZATION, PROOF_GENERATION_KEY_GENERATOR, SPENDING_KEY_GENERATOR,
 };
 // use zcash_primitives::primitives::{ProofGenerationKey, ViewingKey};

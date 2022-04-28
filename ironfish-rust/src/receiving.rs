@@ -54,14 +54,15 @@ impl ReceiptParams {
 
         let value_commitment_randomness: jubjub::Fr = jubjub::Fr::from_bytes_wide(&buffer);
 
-        let value_commitment = ValueCommitment {
-            value: note.value,
-            randomness: value_commitment_randomness,
-            asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_VALUE_GENERATOR),
-        };
-        // let value_commitment = note
-        //     .asset_type
-        //     .value_commitment(note.value, value_commitment_randomness);
+        // let value_commitment = ValueCommitment {
+        //     value: note.value,
+        //     randomness: value_commitment_randomness,
+        //     // asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_VALUE_GENERATOR),
+        //     asset_generator: VALUE_COMMITMENT_VALUE_GENERATOR.into(),
+        // };
+        let value_commitment = note
+            .asset_type
+            .value_commitment(note.value, value_commitment_randomness);
 
         let merkle_note =
             MerkleNote::new(spender_key, note, &value_commitment, &diffie_hellman_keys);
@@ -73,10 +74,8 @@ impl ReceiptParams {
             esk: Some(diffie_hellman_keys.0),
             asset_identifier: note.asset_type.identifier_bits(),
         };
-        println!("output circuit done");
         let proof =
             groth16::create_random_proof(output_circuit, &sapling.receipt_params, &mut OsRng)?;
-        println!("proof done");
 
         let receipt_proof = ReceiptParams {
             sapling,
@@ -174,6 +173,10 @@ impl ReceiptProof {
             &public_input[..],
         ) {
             Ok(()) => Ok(()),
+            Err(e) => {
+                println!("ERR: {:?}", e);
+                Err(errors::SaplingProofError::VerificationFailed)
+            }
             _ => Err(errors::SaplingProofError::VerificationFailed),
         }
     }
@@ -206,6 +209,20 @@ mod test {
     use ff::PrimeField;
     use group::Curve;
     use jubjub::ExtendedPoint;
+
+    #[test]
+    fn test_step_by_step() {
+        let sapling = &*sapling_bls12::SAPLING;
+        let spender_key: SaplingKey = SaplingKey::generate_key();
+        let note = Note::new(
+            spender_key.generate_public_address(),
+            42,
+            Memo([0; 32]),
+            AssetType::new("foo".as_bytes()).unwrap(),
+        );
+
+        assert_eq!(false, true);
+    }
 
     #[test]
     fn test_receipt_round_trip() {

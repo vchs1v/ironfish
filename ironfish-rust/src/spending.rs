@@ -103,14 +103,15 @@ impl<'a> SpendParams {
         let mut buffer = [0u8; 64];
         thread_rng().fill(&mut buffer[..]);
 
-        let value_commitment = ValueCommitment {
-            asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_VALUE_GENERATOR),
-            value: note.value,
-            randomness: jubjub::Fr::from_bytes_wide(&buffer),
-        };
-        // let value_commitment = note
-        //     .asset_type
-        //     .value_commitment(note.value, jubjub::Fr::from_bytes_wide(&buffer));
+        // let value_commitment = ValueCommitment {
+        //     value: note.value,
+        //     randomness: jubjub::Fr::from_bytes_wide(&buffer),
+        //     // asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_VALUE_GENERATOR),
+        //     asset_generator: VALUE_COMMITMENT_VALUE_GENERATOR.into(),
+        // };
+        let value_commitment = note
+            .asset_type
+            .value_commitment(note.value, jubjub::Fr::from_bytes_wide(&buffer));
 
         let mut buffer = [0u8; 64];
         thread_rng().fill(&mut buffer[..]);

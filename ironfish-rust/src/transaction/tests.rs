@@ -109,8 +109,6 @@ fn test_miners_fee() {
     let sapling = &*sapling_bls12::SAPLING;
     let mut transaction = ProposedTransaction::new(sapling.clone());
     let receiver_key: SaplingKey = SaplingKey::generate_key();
-    let asset_type_result = AssetType::new("foo".as_bytes()).unwrap();
-    println!("asset type result {:?}", asset_type_result);
     let out_note = Note::new(
         receiver_key.generate_public_address(),
         42,
