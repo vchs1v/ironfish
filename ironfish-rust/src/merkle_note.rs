@@ -313,7 +313,8 @@ mod test {
         // };
         let value_commitment = note
             .asset_type
-            .value_commitment(note.value, value_commitment_randomness);
+            // .value_commitment(note.value, value_commitment_randomness);
+            .value_commitment(note.value, note.randomness);
 
         let merkle_note =
             MerkleNote::new(&spender_key, &note, &value_commitment, &diffie_hellman_keys);
@@ -328,11 +329,12 @@ mod test {
     #[test]
     fn test_receipt_invalid_commitment() {
         let spender_key: SaplingKey = SaplingKey::generate_key();
+        let asset_type = AssetType::new("foo".as_bytes()).unwrap();
         let note = Note::new(
             spender_key.generate_public_address(),
             42,
             Memo([0; 32]),
-            AssetType::new("foo".as_bytes()).unwrap(),
+            asset_type,
         );
         let diffie_hellman_keys = note.owner.generate_diffie_hellman_keys();
 
@@ -341,12 +343,15 @@ mod test {
 
         let value_commitment_randomness: jubjub::Fr = jubjub::Fr::from_bytes_wide(&buffer);
 
-        let value_commitment = ValueCommitment {
-            value: note.value,
-            randomness: value_commitment_randomness,
-            // asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_VALUE_GENERATOR),
-            asset_generator: VALUE_COMMITMENT_VALUE_GENERATOR.into(),
-        };
+        // let value_commitment = ValueCommitment {
+        //     value: note.value,
+        //     randomness: value_commitment_randomness,
+        //     // asset_generator: ExtendedPoint::from(VALUE_COMMITMENT_VALUE_GENERATOR),
+        //     asset_generator: VALUE_COMMITMENT_VALUE_GENERATOR.into(),
+        // };
+        let value_commitment = note
+            .asset_type
+            .value_commitment(note.value, note.randomness);
 
         let mut merkle_note =
             MerkleNote::new(&spender_key, &note, &value_commitment, &diffie_hellman_keys);

@@ -110,7 +110,8 @@ impl<'a> SpendParams {
         // };
         let value_commitment = note
             .asset_type
-            .value_commitment(note.value, jubjub::Fr::from_bytes_wide(&buffer));
+            // .value_commitment(note.value, jubjub::Fr::from_bytes_wide(&buffer));
+            .value_commitment(note.value, note.randomness);
 
         let mut buffer = [0u8; 64];
         thread_rng().fill(&mut buffer[..]);
@@ -159,7 +160,7 @@ impl<'a> SpendParams {
         if randomized_public_key.0 != self.randomized_public_key.0 {
             return Err(errors::SaplingProofError::SigningError);
         }
-        println!("1");
+        println!("spend post1");
         let mut data_to_be_signed = [0; 64];
         data_to_be_signed[..32].copy_from_slice(&randomized_public_key.0.to_bytes());
         data_to_be_signed[32..].copy_from_slice(&signature_hash[..]);
@@ -177,9 +178,9 @@ impl<'a> SpendParams {
             authorizing_signature,
         };
 
-        println!("2");
+        println!("spend post 2");
         spend_proof.verify_proof(&self.sapling)?;
-        println!("3");
+        println!("spend post 3");
 
         Ok(spend_proof)
     }
@@ -480,7 +481,8 @@ mod test {
         );
         let value_commitment = note
             .asset_type
-            .value_commitment(note.value, jubjub::Fr::from_bytes_wide(&buffer));
+            // .value_commitment(note.value, jubjub::Fr::from_bytes_wide(&buffer));
+            .value_commitment(note.value, note.randomness);
         let witness = make_fake_witness(&note);
         let spend_circuit = Spend {
             value_commitment: Some(value_commitment.clone()),
@@ -545,11 +547,11 @@ mod test {
         let key = SaplingKey::generate_key();
         let public_address = key.generate_public_address();
 
-        let note_randomness = random();
+        // let note_randomness = random();
 
         let note = Note::new(
             public_address,
-            note_randomness,
+            42,
             Memo([0; 32]),
             AssetType::new("foo".as_bytes()).unwrap(),
         );

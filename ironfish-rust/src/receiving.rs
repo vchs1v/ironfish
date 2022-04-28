@@ -62,7 +62,8 @@ impl ReceiptParams {
         // };
         let value_commitment = note
             .asset_type
-            .value_commitment(note.value, value_commitment_randomness);
+            // .value_commitment(note.value, value_commitment_randomness);
+            .value_commitment(note.value, note.randomness);
 
         let merkle_note =
             MerkleNote::new(spender_key, note, &value_commitment, &diffie_hellman_keys);
@@ -80,7 +81,8 @@ impl ReceiptParams {
         let receipt_proof = ReceiptParams {
             sapling,
             proof,
-            value_commitment_randomness,
+            // value_commitment_randomness,
+            value_commitment_randomness: note.randomness,
             merkle_note,
         };
 
@@ -95,11 +97,14 @@ impl ReceiptParams {
     /// Verifies the proof before returning to prevent posting broken
     /// transactions.
     pub fn post(&self) -> Result<ReceiptProof, errors::SaplingProofError> {
+        println!("receipt post 1");
         let receipt_proof = ReceiptProof {
             proof: self.proof.clone(),
             merkle_note: self.merkle_note.clone(),
         };
+        println!("receipt post 2");
         receipt_proof.verify_proof(&self.sapling)?;
+        println!("receipt post 3");
 
         Ok(receipt_proof)
     }

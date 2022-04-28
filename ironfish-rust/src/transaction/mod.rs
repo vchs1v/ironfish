@@ -190,6 +190,7 @@ impl ProposedTransaction {
             .expect("bounds checked above")
             .merkle_note
             .note_encryption_keys = *NOTE_ENCRYPTION_MINER_KEYS;
+        println!("1");
         self._partial_post()
     }
     /// Super special case for generating an illegal transaction for the genesis block.
@@ -212,16 +213,24 @@ impl ProposedTransaction {
     // post transaction without much validation.
     fn _partial_post(&self) -> Result<Transaction, TransactionError> {
         self.check_value_consistency()?;
+        println!("2");
         let data_to_sign = self.transaction_signature_hash();
+        println!("3");
         let binding_signature = self.binding_signature()?;
+        println!("4");
         let mut spend_proofs = vec![];
+        println!("5");
         for spend in &self.spends {
             spend_proofs.push(spend.post(&data_to_sign)?);
         }
+        println!("6");
         let mut receipt_proofs = vec![];
+        println!("7");
         for receipt in &self.receipts {
+            println!("7..");
             receipt_proofs.push(receipt.post()?);
         }
+        println!("8");
         Ok(Transaction {
             sapling: self.sapling.clone(),
             expiration_sequence: self.expiration_sequence,
@@ -559,7 +568,9 @@ fn value_balance_to_point(value: i64) -> Result<ExtendedPoint, TransactionError>
         None => return Err(TransactionError::IllegalValueError),
     };
 
-    let mut value_balance = VALUE_COMMITMENT_VALUE_GENERATOR * jubjub::Fr::from(abs);
+    // let mut value_balance = VALUE_COMMITMENT_VALUE_GENERATOR * jubjub::Fr::from(abs);
+    let asset_type = AssetType::new("foo".as_bytes()).unwrap();
+    let mut value_balance = asset_type.value_commitment_generator() * jubjub::Fr::from(abs);
 
     if is_negative {
         value_balance = -value_balance;
