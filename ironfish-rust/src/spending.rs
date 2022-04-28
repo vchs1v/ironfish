@@ -22,13 +22,12 @@ use rand::{rngs::OsRng, thread_rng, Rng};
 
 // use zcash_proofs::circuit::sapling::Spend;
 use crate::{
-    masp_primitives::constants::VALUE_COMMITMENT_VALUE_GENERATOR,
-    masp_proofs::circuit::sapling::Spend,
+    masp_primitives::constants::SPENDING_KEY_GENERATOR, masp_proofs::circuit::sapling::Spend,
 };
 
 use ff::PrimeField;
 use std::{io, sync::Arc};
-use zcash_primitives::constants::SPENDING_KEY_GENERATOR;
+// use zcash_primitives::constants::SPENDING_KEY_GENERATOR;
 // use zcash_primitives::primitives::{Nullifier, ValueCommitment};
 use crate::masp_primitives::primitives::ValueCommitment;
 use zcash_primitives::primitives::Nullifier;
@@ -160,6 +159,7 @@ impl<'a> SpendParams {
         if randomized_public_key.0 != self.randomized_public_key.0 {
             return Err(errors::SaplingProofError::SigningError);
         }
+        println!("1");
         let mut data_to_be_signed = [0; 64];
         data_to_be_signed[..32].copy_from_slice(&randomized_public_key.0.to_bytes());
         data_to_be_signed[32..].copy_from_slice(&signature_hash[..]);
@@ -177,7 +177,9 @@ impl<'a> SpendParams {
             authorizing_signature,
         };
 
+        println!("2");
         spend_proof.verify_proof(&self.sapling)?;
+        println!("3");
 
         Ok(spend_proof)
     }
@@ -350,6 +352,7 @@ impl SpendProof {
     /// bellman circuit and executing it.
     pub fn verify_proof(&self, sapling: &Sapling) -> Result<(), errors::SaplingProofError> {
         if self.value_commitment.is_small_order().into() {
+            println!("3");
             return Err(errors::SaplingProofError::VerificationFailed);
         }
 
@@ -369,8 +372,13 @@ impl SpendProof {
         public_input[5] = nullifier[0];
         public_input[6] = nullifier[1];
 
+        println!("4");
         match groth16::verify_proof(&sapling.spend_verifying_key, &self.proof, &public_input[..]) {
             Ok(()) => Ok(()),
+            Err(e) => {
+                println!("ERR: {:?}", e);
+                Err(errors::SaplingProofError::VerificationFailed)
+            }
             _ => Err(errors::SaplingProofError::VerificationFailed),
         }
     }
@@ -418,14 +426,117 @@ mod test {
     use super::{SpendParams, SpendProof};
     use crate::{
         keys::SaplingKey,
-        masp_primitives::asset_type::AssetType,
+        masp_primitives::{asset_type::AssetType, constants::SPENDING_KEY_GENERATOR},
+        masp_proofs::circuit::sapling::Spend,
+        merkle_note::{position as witness_position, sapling_auth_path},
         note::{Memo, Note},
         sapling_bls12,
         test_util::make_fake_witness,
+        witness::WitnessTrait,
     };
-    use group::Curve;
-    use rand::prelude::*;
+    use bellman::{gadgets::multipack, groth16};
+    use bls12_381::Scalar;
+    use group::{Curve, GroupEncoding};
+    use jubjub::ExtendedPoint;
+    use rand::{prelude::*, rngs::OsRng};
     use rand::{thread_rng, Rng};
+    use zcash_primitives::redjubjub;
+
+    #[test]
+    fn test_simple_spend() {
+        let sapling = sapling_bls12::SAPLING.clone();
+
+        let spender_key = SaplingKey::generate_key();
+
+        // let mut buffer = [0u8; 64];
+        // thread_rng().fill(&mut buffer[..]);
+        let buffer = [
+            227, 170, 237, 235, 242, 193, 165, 230, 65, 213, 12, 96, 13, 217, 138, 243, 148, 195,
+            241, 122, 234, 136, 180, 132, 4, 158, 192, 112, 34, 71, 192, 197, 116, 223, 244, 48,
+            163, 31, 158, 183, 178, 100, 134, 117, 44, 157, 117, 140, 152, 96, 209, 11, 32, 153,
+            243, 9, 229, 82, 8, 168, 21, 150, 147, 73,
+        ];
+        let public_key_randomness = jubjub::Fr::from_bytes_wide(&buffer);
+
+        let randomized_public_key1 = redjubjub::PublicKey(spender_key.authorizing_key.into())
+            .randomize(public_key_randomness, SPENDING_KEY_GENERATOR);
+
+        // Deconstructing this line:
+        // let proof = spend.post(&sig_hash).expect("should be able to sign proof");
+        // let private_key = redjubjub::PrivateKey(spender_key.spend_authorizing_key);
+        // let randomized_private_key = private_key.randomize(public_key_randomness);
+        // let randomized_public_key2 =
+        //     redjubjub::PublicKey::from_private(&randomized_private_key, SPENDING_KEY_GENERATOR);
+        // assert_eq!(randomized_public_key1.0, randomized_public_key2.0);
+
+        // stage 2
+        let public_address = spender_key.generate_public_address();
+        let proof_generation_key = spender_key.sapling_proof_generation_key();
+        let note = Note::new(
+            public_address,
+            5,
+            Memo([0; 32]),
+            AssetType::new("foo".as_bytes()).unwrap(),
+        );
+        let value_commitment = note
+            .asset_type
+            .value_commitment(note.value, jubjub::Fr::from_bytes_wide(&buffer));
+        let witness = make_fake_witness(&note);
+        let spend_circuit = Spend {
+            value_commitment: Some(value_commitment.clone()),
+            proof_generation_key: Some(proof_generation_key),
+            payment_address: Some(note.owner.sapling_payment_address()),
+            auth_path: sapling_auth_path(&witness),
+            commitment_randomness: Some(note.randomness),
+            anchor: Some(witness.root_hash()),
+            ar: Some(public_key_randomness),
+        };
+        let proof =
+            groth16::create_random_proof(spend_circuit, &sapling.spend_params, &mut OsRng).unwrap();
+        let nullifier = note.nullifier(&spender_key, witness_position(&witness));
+
+        // let mut sig_hash = [0u8; 32];
+        // thread_rng().fill(&mut sig_hash[..]);
+        let sig_hash = [
+            48, 98, 134, 214, 243, 159, 195, 149, 41, 203, 83, 230, 115, 151, 81, 95, 195, 34, 28,
+            39, 23, 23, 159, 216, 71, 223, 42, 171, 78, 120, 164, 14,
+        ];
+        let mut data_to_be_signed = [0; 64];
+        data_to_be_signed[..32].copy_from_slice(&randomized_public_key1.0.to_bytes());
+        data_to_be_signed[32..].copy_from_slice(&sig_hash[..]);
+
+        // let authorizing_signature =
+        //     randomized_private_key.sign(&data_to_be_signed, &mut OsRng, SPENDING_KEY_GENERATOR);
+
+        // let spend_proof = SpendProof {
+        //     proof: proof.clone(),
+        //     value_commitment: value_commitment.commitment().into(),
+        //     randomized_public_key: randomized_public_key2,
+        //     root_hash: witness.root_hash(),
+        //     tree_size: witness.tree_size(),
+        //     nullifier,
+        //     authorizing_signature,
+        // };
+
+        // spend_proof.verify_proof(&sapling).unwrap();
+        // stage 3
+        let mut public_input = [Scalar::zero(); 7];
+        let p = randomized_public_key1.0.to_affine();
+        public_input[0] = p.get_u();
+        public_input[1] = p.get_v();
+
+        let p2 = ExtendedPoint::from(value_commitment.commitment()).to_affine();
+        public_input[2] = p2.get_u();
+        public_input[3] = p2.get_v();
+
+        public_input[4] = witness.root_hash();
+
+        let nullifier_le = multipack::bytes_to_bits_le(&nullifier.0);
+        let nullifier_s = multipack::compute_multipacking(&nullifier_le);
+        public_input[5] = nullifier_s[0];
+        public_input[6] = nullifier_s[1];
+        groth16::verify_proof(&sapling.spend_verifying_key, &proof, &public_input[..]).unwrap();
+    }
 
     #[test]
     fn test_spend_round_trip() {

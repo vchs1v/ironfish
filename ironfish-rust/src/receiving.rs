@@ -210,19 +210,26 @@ mod test {
     use group::Curve;
     use jubjub::ExtendedPoint;
 
-    #[test]
-    fn test_step_by_step() {
-        let sapling = &*sapling_bls12::SAPLING;
-        let spender_key: SaplingKey = SaplingKey::generate_key();
-        let note = Note::new(
-            spender_key.generate_public_address(),
-            42,
-            Memo([0; 32]),
-            AssetType::new("foo".as_bytes()).unwrap(),
-        );
+    // #[test]
+    // fn test_step_by_step() {
+    //     let sapling = &*sapling_bls12::SAPLING;
+    //     let spender_key: SaplingKey = SaplingKey::generate_key();
+    //     let public_address = spender_key.generate_public_address();
 
-        assert_eq!(false, true);
-    }
+    //     let (nsk, ak) = public_address.generate_diffie_hellman_keys();
+
+    //     let asset_type = AssetType::new("foo".as_bytes());
+
+    //     let mut buffer = [0u8; 64];
+    //     thread_rng().fill(&mut buffer[..]);
+    //     let randomness: jubjub::Fr = jubjub::Fr::from_bytes_wide(&buffer);
+
+    //     let value_commitment = asset_type.value_commitment(5, randomness);
+
+    //     let payment_address = public_address.sapling_payment_address();
+
+    //     assert_eq!(true, true);
+    // }
 
     #[test]
     fn test_receipt_round_trip() {
