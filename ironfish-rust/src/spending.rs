@@ -481,8 +481,7 @@ mod test {
         );
         let value_commitment = note
             .asset_type
-            // .value_commitment(note.value, jubjub::Fr::from_bytes_wide(&buffer));
-            .value_commitment(note.value, note.randomness);
+            .value_commitment(note.value, jubjub::Fr::from_bytes_wide(&buffer));
         let witness = make_fake_witness(&note);
         let spend_circuit = Spend {
             value_commitment: Some(value_commitment.clone()),
