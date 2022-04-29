@@ -433,7 +433,7 @@ mod test {
         witness::{WitnessNode, WitnessTrait},
     };
     use bellman::{gadgets::multipack, groth16};
-    use bls12_381::Scalar;
+    use bls12_381::{Bls12, Scalar};
     use group::{Curve, GroupEncoding};
     use jubjub::ExtendedPoint;
     use masp_primitives::{
@@ -546,8 +546,22 @@ mod test {
 
     #[test]
     fn test_masp_prover() {
-        masp_proofs::download_parameters();
-        let sapling = sapling_bls12::SAPLING.clone();
+        // masp_proofs::download_parameters();
+        let groth_params = groth16::generate_random_parameters::<Bls12, _, _>(
+            Spend {
+                value_commitment: None,
+                proof_generation_key: None,
+                payment_address: None,
+                commitment_randomness: None,
+                ar: None,
+                auth_path: vec![None; 32],
+                anchor: None,
+            },
+            &mut OsRng,
+        )
+        .unwrap();
+        let spend_vk = groth16::prepare_verifying_key(&groth_params.vk);
+        // let sapling = sapling_bls12::SAPLING.clone();
         let mut ctx = SaplingProvingContext::new();
 
         // pub struct ProofGenerationKey {
@@ -601,8 +615,8 @@ mod test {
         //         .map(|(node, b)| Some(((*node).into(), *b)))
         //         .collect(),
 
-        let proving_key = &sapling.spend_params;
-        let verifying_key = &sapling.spend_verifying_key;
+        let proving_key = &groth_params;
+        let verifying_key = &spend_vk;
         //     &mut self,
         //     proof_generation_key: ProofGenerationKey,
         //     diversifier: Diversifier,
@@ -629,6 +643,8 @@ mod test {
             verifying_key,
         )
         .unwrap();
+
+        // groth16::verify_proof(pvk, proof, public_inputs)
     }
 
     #[test]

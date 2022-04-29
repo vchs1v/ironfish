@@ -62,6 +62,7 @@ impl Sapling {
     pub fn load() -> Self {
         // TODO: We'll need to build our own parameters using a trusted set up at some point.
         // These params were borrowed from zcash
+
         let spend_bytes = include_bytes!("sapling_params/sapling-spend.params");
         let receipt_bytes = include_bytes!("sapling_params/sapling-output.params");
 
@@ -70,6 +71,11 @@ impl Sapling {
 
         let spend_vk = groth16::prepare_verifying_key(&spend_params.vk);
         let receipt_vk = groth16::prepare_verifying_key(&receipt_params.vk);
+
+        // let (spend_params, spend_vk, receipt_params, reciept_vk) = masp_proofs::load_parameters(
+        //     "sapling_params/sapling-spend.params".into(),
+        //     "sapling_params/sapling-output.params",
+        // );
 
         Sapling {
             spend_verifying_key: spend_vk,
