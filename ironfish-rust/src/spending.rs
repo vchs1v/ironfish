@@ -430,14 +430,20 @@ mod test {
         note::{Memo, Note},
         sapling_bls12,
         test_util::make_fake_witness,
-        witness::WitnessTrait,
+        witness::{WitnessNode, WitnessTrait},
     };
     use bellman::{gadgets::multipack, groth16};
     use bls12_381::Scalar;
     use group::{Curve, GroupEncoding};
     use jubjub::ExtendedPoint;
-    use masp_primitives::{asset_type::AssetType, constants::SPENDING_KEY_GENERATOR};
-    use masp_proofs::circuit::sapling::Spend;
+    use masp_primitives::{
+        asset_type::AssetType,
+        constants::SPENDING_KEY_GENERATOR,
+        merkle_tree::MerklePath,
+        primitives::{ProofGenerationKey, Rseed},
+        sapling::Node,
+    };
+    use masp_proofs::{circuit::sapling::Spend, sapling::SaplingProvingContext};
     use rand::{prelude::*, rngs::OsRng};
     use rand::{thread_rng, Rng};
     use zcash_primitives::sapling::redjubjub;
@@ -536,6 +542,93 @@ mod test {
         public_input[5] = nullifier_s[0];
         public_input[6] = nullifier_s[1];
         groth16::verify_proof(&sapling.spend_verifying_key, &proof, &public_input[..]).unwrap();
+    }
+
+    #[test]
+    fn test_masp_prover() {
+        masp_proofs::download_parameters();
+        let sapling = sapling_bls12::SAPLING.clone();
+        let mut ctx = SaplingProvingContext::new();
+
+        // pub struct ProofGenerationKey {
+        //     pub ak: jubjub::SubgroupPoint,
+        //     pub nsk: jubjub::Fr,
+        // }
+
+        let key = SaplingKey::generate_key();
+        let public_address = key.generate_public_address();
+
+        let value = 42;
+        let asset_type = AssetType::new("foo".as_bytes()).unwrap();
+        let note = Note::new(public_address.clone(), value, Memo([0; 32]), asset_type);
+
+        let proof_generation_key = ProofGenerationKey {
+            ak: key.authorizing_key,
+            nsk: key.proof_authorizing_key,
+        };
+        let diversifier = public_address.diversifier;
+
+        let rseed = Rseed::BeforeZip212(note.randomness);
+
+        let mut buffer = [0u8; 64];
+        thread_rng().fill(&mut buffer[..]);
+        let ar = jubjub::Fr::from_bytes_wide(&buffer);
+
+        let witness = make_fake_witness(&note);
+        let anchor = witness.root_hash();
+
+        let our_merkle_path = sapling_auth_path(&witness);
+        let merkle_path = MerklePath::from_path(
+            witness
+                .auth_path
+                .iter()
+                .map(|witness_node| match witness_node {
+                    WitnessNode::Left(scalar) => (Node::new(scalar.to_bytes()), false),
+                    WitnessNode::Right(scalar) => (Node::new(scalar.to_bytes()), true),
+                })
+                .collect(),
+            witness_position(&witness),
+        );
+
+        // pub struct MerklePath<Node: Hashable> {
+        //     pub auth_path: Vec<(Node, bool)>,
+        //     pub position: u64,
+        // }
+
+        // auth_path: merkle_path
+        //         .auth_path
+        //         .iter()
+        //         .map(|(node, b)| Some(((*node).into(), *b)))
+        //         .collect(),
+
+        let proving_key = &sapling.spend_params;
+        let verifying_key = &sapling.spend_verifying_key;
+        //     &mut self,
+        //     proof_generation_key: ProofGenerationKey,
+        //     diversifier: Diversifier,
+        //     rseed: Rseed,
+        //     ar: jubjub::Fr,
+        //     asset_type: AssetType,
+        //     value: u64,
+        //     anchor: bls12_381::Scalar,
+        //     merkle_path: MerklePath<Node>,
+        //     proving_key: &Parameters<Bls12>,
+        //     verifying_key: &PreparedVerifyingKey<Bls12>,
+        // ) -> Result<(Proof<Bls12
+
+        ctx.spend_proof(
+            proof_generation_key,
+            diversifier,
+            rseed,
+            ar,
+            asset_type,
+            value,
+            anchor,
+            merkle_path,
+            proving_key,
+            verifying_key,
+        )
+        .unwrap();
     }
 
     #[test]

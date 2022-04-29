@@ -23,8 +23,8 @@ group = "0.11"
 jubjub = "0.8"
 # zcash_primitives = "0.5"
 # zcash_proofs = "0.5"
-zcash_proofs = {path = "../../librustzcash/zcash_proofs"}
-zcash_primitives = {path = "../../librustzcash/zcash_primitives"}
+zcash_proofs = { git = "https://github.com/mat-if/librustzcash" }
+zcash_primitives = { git = "https://github.com/mat-if/librustzcash" }
 
 byteorder = "1.3.1"
 lazy_static = "1.4.0"
@@ -43,8 +43,10 @@ aes = "0.7"
 fpe = "0.5"
 itertools = "0.10.1"
 rand_xorshift = "0.3"
-masp_proofs = { git = "https://github.com/anoma/masp", rev = "6b3bd3c3b6e329b6e9ca6c2fdfc9b68e45d073eb" }
-masp_primitives = { git = "https://github.com/anoma/masp", rev = "6b3bd3c3b6e329b6e9ca6c2fdfc9b68e45d073eb" }
+masp_proofs = { path = "../../masp/masp_proofs", features = ["download-params"]}
+masp_primitives = { path = "../../masp/masp_primitives" }
+# masp_proofs = { git = "https://github.com/anoma/masp", rev = "6b3bd3c3b6e329b6e9ca6c2fdfc9b68e45d073eb" }
+# masp_primitives = { git = "https://github.com/anoma/masp", rev = "6b3bd3c3b6e329b6e9ca6c2fdfc9b68e45d073eb" }
 
 # Copied from librustzcash/cargo.toml
 # Make sure these are the same as librustzcash's
@@ -54,3 +56,4 @@ masp_primitives = { git = "https://github.com/anoma/masp", rev = "6b3bd3c3b6e329
 hdwallet = { git = "https://github.com/nuttycom/hdwallet", rev = "576683b9f2865f1118c309017ff36e01f84420c9" }
 zcash_encoding = { path = "../../librustzcash/components/zcash_encoding" }
 zcash_note_encryption = { path = "../../librustzcash/components/zcash_note_encryption" }
+equihash = { path = "../../masp/components/equihash" }
