@@ -13,9 +13,11 @@ use ff::PrimeField;
 use jubjub::SubgroupPoint;
 use rand::{thread_rng, Rng};
 // use zcash_primitives::primitives::{Note as SaplingNote, Nullifier, Rseed};
-use crate::masp_primitives::asset_type::AssetType;
-use crate::masp_primitives::primitives::Note as SaplingNote;
-use zcash_primitives::primitives::{Nullifier, Rseed};
+use masp_primitives::asset_type::AssetType;
+use masp_primitives::primitives::Note as SaplingNote;
+// use zcash_primitives::sapling::{Nullifier, Rseed};
+use masp_primitives::primitives::Rseed;
+use zcash_primitives::sapling::Nullifier;
 
 use std::{fmt, io, io::Read};
 
@@ -244,8 +246,12 @@ impl<'a> Note {
     /// only at the time the note is spent. This key is collected in a massive
     /// 'nullifier set', preventing double-spend.
     pub fn nullifier(&self, private_key: &SaplingKey, position: u64) -> Nullifier {
-        self.sapling_note()
-            .nf(&private_key.sapling_viewing_key(), position)
+        Nullifier::from_slice(
+            &self
+                .sapling_note()
+                .nf(&private_key.sapling_viewing_key(), position),
+        )
+        .unwrap()
     }
 
     /// Get the commitment hash for this note. This encapsulates all the values
@@ -328,10 +334,8 @@ impl<'a> Note {
 #[cfg(test)]
 mod test {
     use super::{Memo, Note};
-    use crate::{
-        keys::{shared_secret, SaplingKey},
-        masp_primitives::asset_type::AssetType,
-    };
+    use crate::keys::{shared_secret, SaplingKey};
+    use masp_primitives::asset_type::AssetType;
 
     #[test]
     fn test_plaintext_serialization() {

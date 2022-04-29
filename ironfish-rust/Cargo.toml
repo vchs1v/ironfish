@@ -12,23 +12,26 @@ path = "src/lib.rs"
 [features]
 default = []
 native = ["bellman/multicore", "zcash_proofs/multicore"]
-wasm = ["rand/wasm-bindgen"]
+# wasm = ["rand/wasm-bindgen"]
+wasm = []
 
 [dependencies]
-bls12_381 = "0.3.1"
-bellman = { version = "0.8", default-features = false, features = ["groth16"]}
-ff = "0.8"
-group = "0.8"
-jubjub = "0.5.1"
-zcash_primitives = "0.5"
-zcash_proofs = "0.5"
+bls12_381 = "0.6"
+bellman = { version = "0.11", default-features = false, features = ["groth16"]}
+ff = "0.11"
+group = "0.11"
+jubjub = "0.8"
+# zcash_primitives = "0.5"
+# zcash_proofs = "0.5"
+zcash_proofs = {path = "../../librustzcash/zcash_proofs"}
+zcash_primitives = {path = "../../librustzcash/zcash_primitives"}
 
 byteorder = "1.3.1"
 lazy_static = "1.4.0"
 blake2b_simd = "0.5"
 blake2s_simd = "0.5"
 blake3 = "1.3.0"
-rand = "0.7"
+rand = "0.8"
 rust-crypto-wasm = "0.3.1" # in favor of rust-crypto as this one is wasm friendly
 tiny-bip39 = "0.8.0"
 
@@ -40,7 +43,14 @@ aes = "0.7"
 fpe = "0.5"
 itertools = "0.10.1"
 rand_xorshift = "0.3"
+masp_proofs = { git = "https://github.com/anoma/masp", rev = "6b3bd3c3b6e329b6e9ca6c2fdfc9b68e45d073eb" }
+masp_primitives = { git = "https://github.com/anoma/masp", rev = "6b3bd3c3b6e329b6e9ca6c2fdfc9b68e45d073eb" }
 
+# Copied from librustzcash/cargo.toml
+# Make sure these are the same as librustzcash's
 [patch.crates-io]
 # bellman = { git = "https://github.com/iron-fish/bellman", rev = "368a62fb1821eaae495c60ada82d85faaea8b616" }
-bellman = { path = "../../bellman" }
+# bellman = { path = "../../bellman" }
+hdwallet = { git = "https://github.com/nuttycom/hdwallet", rev = "576683b9f2865f1118c309017ff36e01f84420c9" }
+zcash_encoding = { path = "../../librustzcash/components/zcash_encoding" }
+zcash_note_encryption = { path = "../../librustzcash/components/zcash_note_encryption" }

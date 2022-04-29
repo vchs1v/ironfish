@@ -11,8 +11,8 @@ use bls12_381::Bls12;
 mod serializing;
 
 // masp stuff
-pub mod masp_primitives;
-pub mod masp_proofs;
+// pub mod masp_primitives;
+// pub mod masp_proofs;
 
 pub mod errors;
 pub mod keys;

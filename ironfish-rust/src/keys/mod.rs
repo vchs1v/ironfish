@@ -16,11 +16,11 @@ use rand::prelude::*;
 // use zcash_primitives::constants::{
 //     CRH_IVK_PERSONALIZATION, PROOF_GENERATION_KEY_GENERATOR, SPENDING_KEY_GENERATOR,
 // };
-use crate::masp_primitives::constants::{
+use masp_primitives::constants::{
     CRH_IVK_PERSONALIZATION, PROOF_GENERATION_KEY_GENERATOR, SPENDING_KEY_GENERATOR,
 };
 // use zcash_primitives::primitives::{ProofGenerationKey, ViewingKey};
-use crate::masp_primitives::primitives::{ProofGenerationKey, ViewingKey};
+use masp_primitives::primitives::{ProofGenerationKey, ViewingKey};
 
 use std::io;
 

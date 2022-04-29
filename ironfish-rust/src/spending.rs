@@ -21,17 +21,16 @@ use jubjub::ExtendedPoint;
 use rand::{rngs::OsRng, thread_rng, Rng};
 
 // use zcash_proofs::circuit::sapling::Spend;
-use crate::{
-    masp_primitives::constants::SPENDING_KEY_GENERATOR, masp_proofs::circuit::sapling::Spend,
-};
+use masp_primitives::constants::SPENDING_KEY_GENERATOR;
+use masp_proofs::circuit::sapling::Spend;
 
 use ff::PrimeField;
 use std::{io, sync::Arc};
 // use zcash_primitives::constants::SPENDING_KEY_GENERATOR;
 // use zcash_primitives::primitives::{Nullifier, ValueCommitment};
-use crate::masp_primitives::primitives::ValueCommitment;
-use zcash_primitives::primitives::Nullifier;
-use zcash_primitives::redjubjub;
+use masp_primitives::primitives::ValueCommitment;
+use zcash_primitives::sapling::redjubjub;
+use zcash_primitives::sapling::Nullifier;
 
 /// Parameters used when constructing proof that the spender owns a note with
 /// a given value.
@@ -427,8 +426,6 @@ mod test {
     use super::{SpendParams, SpendProof};
     use crate::{
         keys::SaplingKey,
-        masp_primitives::{asset_type::AssetType, constants::SPENDING_KEY_GENERATOR},
-        masp_proofs::circuit::sapling::Spend,
         merkle_note::{position as witness_position, sapling_auth_path},
         note::{Memo, Note},
         sapling_bls12,
@@ -439,9 +436,11 @@ mod test {
     use bls12_381::Scalar;
     use group::{Curve, GroupEncoding};
     use jubjub::ExtendedPoint;
+    use masp_primitives::{asset_type::AssetType, constants::SPENDING_KEY_GENERATOR};
+    use masp_proofs::circuit::sapling::Spend;
     use rand::{prelude::*, rngs::OsRng};
     use rand::{thread_rng, Rng};
-    use zcash_primitives::redjubjub;
+    use zcash_primitives::sapling::redjubjub;
 
     #[test]
     fn test_simple_spend() {

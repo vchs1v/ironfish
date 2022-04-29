@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-use ironfish_rust::masp_primitives::asset_type::AssetType;
+use masp_primitives::asset_type::AssetType;
 use napi::bindgen_prelude::*;
 use napi_derive::napi;
 

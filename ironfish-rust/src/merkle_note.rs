@@ -13,12 +13,12 @@ use super::{
     MerkleNoteHash,
 };
 
-use crate::masp_primitives::{asset_type::AssetType, primitives::ValueCommitment};
 use blake2b_simd::Params as Blake2b;
 use bls12_381::Scalar;
 use ff::PrimeField;
 use group::GroupEncoding;
 use jubjub::{ExtendedPoint, SubgroupPoint};
+use masp_primitives::{asset_type::AssetType, primitives::ValueCommitment};
 // use zcash_primitives::primitives::ValueCommitment;
 
 use std::{convert::TryInto, io};
@@ -274,16 +274,16 @@ mod test {
     use super::MerkleNote;
     use crate::{
         keys::SaplingKey,
-        masp_primitives::{
-            constants::{VALUE_COMMITMENT_RANDOMNESS_GENERATOR, VALUE_COMMITMENT_VALUE_GENERATOR},
-            primitives::ValueCommitment,
-        },
         note::{Memo, Note},
     };
+    use masp_primitives::{
+        asset_type::AssetType, constants::VALUE_COMMITMENT_RANDOMNESS_GENERATOR,
+        primitives::ValueCommitment,
+    };
 
-    use crate::masp_primitives::asset_type::AssetType;
     use bls12_381::Scalar;
     use jubjub::ExtendedPoint;
+    // use masp_primitives::asset_type::AssetType;
     use rand::prelude::*;
     use rand::{thread_rng, Rng};
     // use zcash_primitives::primitives::ValueCommitment;

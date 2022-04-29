@@ -2,13 +2,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
-use crate::{
-    masp_primitives::{
-        constants::{VALUE_COMMITMENT_RANDOMNESS_GENERATOR, VALUE_COMMITMENT_VALUE_GENERATOR},
-        primitives::ValueCommitment,
-    },
-    masp_proofs::circuit::sapling::Output,
+use masp_primitives::{
+    constants::VALUE_COMMITMENT_RANDOMNESS_GENERATOR, primitives::ValueCommitment,
 };
+use masp_proofs::circuit::sapling::Output;
 
 use super::{errors, keys::SaplingKey, merkle_note::MerkleNote, note::Note, Sapling};
 use bellman::groth16;
@@ -207,13 +204,13 @@ mod test {
     use super::{ReceiptParams, ReceiptProof};
     use crate::{
         keys::SaplingKey,
-        masp_primitives::asset_type::AssetType,
         note::{Memo, Note},
         sapling_bls12,
     };
     use ff::PrimeField;
     use group::Curve;
     use jubjub::ExtendedPoint;
+    use masp_primitives::asset_type::AssetType;
 
     // #[test]
     // fn test_step_by_step() {
