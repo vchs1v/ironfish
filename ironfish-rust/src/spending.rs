@@ -406,13 +406,101 @@ mod test {
     use super::{SpendParams, SpendProof};
     use crate::{
         keys::SaplingKey,
+        merkle_note::{position, sapling_auth_path},
         note::{Memo, Note},
         sapling_bls12,
         test_util::make_fake_witness,
+        witness::{WitnessNode, WitnessTrait},
     };
+    use bellman::groth16;
+    use bls12_381::Bls12;
     use group::Curve;
-    use rand::prelude::*;
+    use rand::{prelude::*, rngs::OsRng};
     use rand::{thread_rng, Rng};
+    use zcash_primitives::{
+        merkle_tree::MerklePath,
+        sapling::Node,
+        sapling::{ProofGenerationKey, Rseed},
+    };
+    use zcash_proofs::{circuit::sapling::Spend, sapling::SaplingProvingContext};
+
+    #[test]
+    fn test_masp_prover() {
+        // Need to fork to test properly: https://github.com/mat-if/librustzcash
+
+        // USE PREBUILT PARAMS
+        let sapling = sapling_bls12::SAPLING.clone();
+        let spend_params = &sapling.spend_params;
+        let spend_vk = &sapling.spend_verifying_key;
+
+        // GENERATE PARAMS ON THE FLY
+        // let spend_params = groth16::generate_random_parameters::<Bls12, _, _>(
+        //     Spend {
+        //         value_commitment: None,
+        //         proof_generation_key: None,
+        //         payment_address: None,
+        //         commitment_randomness: None,
+        //         ar: None,
+        //         auth_path: vec![None; 32],
+        //         anchor: None,
+        //     },
+        //     &mut OsRng,
+        // )
+        // .unwrap();
+        // let spend_vk = groth16::prepare_verifying_key(&spend_params.vk);
+
+        // TEST BEGINS
+        let mut ctx = SaplingProvingContext::new();
+
+        let key = SaplingKey::generate_key();
+        let public_address = key.generate_public_address();
+
+        let value = 42;
+        let note = Note::new(public_address.clone(), value, Memo([0; 32]));
+
+        let proof_generation_key = ProofGenerationKey {
+            ak: key.authorizing_key,
+            nsk: key.proof_authorizing_key,
+        };
+        let diversifier = public_address.diversifier;
+
+        let rseed = Rseed::BeforeZip212(note.randomness);
+
+        let mut buffer = [0u8; 64];
+        thread_rng().fill(&mut buffer[..]);
+        let ar = jubjub::Fr::from_bytes_wide(&buffer);
+
+        let witness = make_fake_witness(&note);
+        let anchor = witness.root_hash();
+
+        let merkle_path = MerklePath::from_path(
+            witness
+                .auth_path
+                .iter()
+                .map(|witness_node| match witness_node {
+                    WitnessNode::Left(scalar) => (Node::new(scalar.to_bytes()), false),
+                    WitnessNode::Right(scalar) => (Node::new(scalar.to_bytes()), true),
+                })
+                .collect(),
+            position(&witness),
+        );
+
+        let proving_key = &spend_params;
+        let verifying_key = &spend_vk;
+
+        ctx.spend_proof(
+            proof_generation_key,
+            diversifier,
+            rseed,
+            ar,
+            value,
+            anchor,
+            merkle_path,
+            proving_key,
+            verifying_key,
+        )
+        .unwrap();
+    }
 
     #[test]
     fn test_spend_round_trip() {
