@@ -275,7 +275,7 @@ mod test {
     use bls12_381::Scalar;
     use rand::prelude::*;
     use rand::{thread_rng, Rng};
-    use zcash_primitives::sapling::ValueCommitment;
+    use zcash_primitives::sapling::{asset_type::AssetType, ValueCommitment};
 
     #[test]
     fn test_view_key_encryption() {
@@ -289,10 +289,8 @@ mod test {
 
         let value_commitment_randomness: jubjub::Fr = jubjub::Fr::from_bytes_wide(&buffer);
 
-        let value_commitment = ValueCommitment {
-            value: note.value,
-            randomness: value_commitment_randomness,
-        };
+        let asset_type = AssetType::new(b"").unwrap();
+        let value_commitment = asset_type.value_commitment(note.value, value_commitment_randomness);
 
         let merkle_note =
             MerkleNote::new(&spender_key, &note, &value_commitment, &diffie_hellman_keys);
@@ -315,10 +313,8 @@ mod test {
 
         let value_commitment_randomness: jubjub::Fr = jubjub::Fr::from_bytes_wide(&buffer);
 
-        let value_commitment = ValueCommitment {
-            value: note.value,
-            randomness: value_commitment_randomness,
-        };
+        let asset_type = AssetType::new(b"").unwrap();
+        let value_commitment = asset_type.value_commitment(note.value, value_commitment_randomness);
 
         let mut merkle_note =
             MerkleNote::new(&spender_key, &note, &value_commitment, &diffie_hellman_keys);

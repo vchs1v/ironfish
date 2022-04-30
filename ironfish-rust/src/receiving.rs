@@ -8,7 +8,7 @@ use bls12_381::{Bls12, Scalar};
 use group::Curve;
 use jubjub::ExtendedPoint;
 use rand::{rngs::OsRng, thread_rng, Rng};
-use zcash_primitives::sapling::ValueCommitment;
+use zcash_primitives::sapling::{asset_type::AssetType, ValueCommitment};
 use zcash_proofs::circuit::sapling::Output;
 
 use std::{io, sync::Arc};
@@ -46,10 +46,8 @@ impl ReceiptParams {
 
         let value_commitment_randomness: jubjub::Fr = jubjub::Fr::from_bytes_wide(&buffer);
 
-        let value_commitment = ValueCommitment {
-            value: note.value,
-            randomness: value_commitment_randomness,
-        };
+        let asset_type = AssetType::new(b"").unwrap();
+        let value_commitment = asset_type.value_commitment(note.value, value_commitment_randomness);
 
         let merkle_note =
             MerkleNote::new(spender_key, note, &value_commitment, &diffie_hellman_keys);
@@ -59,6 +57,7 @@ impl ReceiptParams {
             payment_address: Some(note.owner.sapling_payment_address()),
             commitment_randomness: Some(note.randomness),
             esk: Some(diffie_hellman_keys.0),
+            asset_identifier: asset_type.identifier_bits(),
         };
         let proof =
             groth16::create_random_proof(output_circuit, &sapling.receipt_params, &mut OsRng)?;

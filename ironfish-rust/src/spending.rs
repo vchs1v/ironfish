@@ -24,8 +24,8 @@ use zcash_proofs::circuit::sapling::Spend;
 
 use ff::PrimeField;
 use std::{io, sync::Arc};
-use zcash_primitives::constants::SPENDING_KEY_GENERATOR;
 use zcash_primitives::sapling::{redjubjub, Nullifier, ValueCommitment};
+use zcash_primitives::{constants::SPENDING_KEY_GENERATOR, sapling::asset_type::AssetType};
 
 /// Parameters used when constructing proof that the spender owns a note with
 /// a given value.
@@ -96,10 +96,9 @@ impl<'a> SpendParams {
         let mut buffer = [0u8; 64];
         thread_rng().fill(&mut buffer[..]);
 
-        let value_commitment = ValueCommitment {
-            value: note.value,
-            randomness: jubjub::Fr::from_bytes_wide(&buffer),
-        };
+        let asset_type = AssetType::new(b"").unwrap();
+        let value_commitment =
+            asset_type.value_commitment(note.value, jubjub::Fr::from_bytes_wide(&buffer));
 
         let mut buffer = [0u8; 64];
         thread_rng().fill(&mut buffer[..]);
@@ -419,7 +418,7 @@ mod test {
     use rand::{thread_rng, Rng};
     use zcash_primitives::{
         merkle_tree::MerklePath,
-        sapling::Node,
+        sapling::{asset_type::AssetType, Node},
         sapling::{ProofGenerationKey, Rseed},
     };
     use zcash_proofs::{circuit::sapling::Spend, sapling::SaplingProvingContext};
@@ -429,25 +428,25 @@ mod test {
         // Need to clone locally to test properly - cargo is referencing it via local path: https://github.com/mat-if/librustzcash
 
         // USE PREBUILT PARAMS
-        let sapling = sapling_bls12::SAPLING.clone();
-        let spend_params = &sapling.spend_params;
-        let spend_vk = &sapling.spend_verifying_key;
+        // let sapling = sapling_bls12::SAPLING.clone();
+        // let spend_params = &sapling.spend_params;
+        // let spend_vk = &sapling.spend_verifying_key;
 
         // GENERATE PARAMS ON THE FLY
-        // let spend_params = groth16::generate_random_parameters::<Bls12, _, _>(
-        //     Spend {
-        //         value_commitment: None,
-        //         proof_generation_key: None,
-        //         payment_address: None,
-        //         commitment_randomness: None,
-        //         ar: None,
-        //         auth_path: vec![None; 32],
-        //         anchor: None,
-        //     },
-        //     &mut OsRng,
-        // )
-        // .unwrap();
-        // let spend_vk = groth16::prepare_verifying_key(&spend_params.vk);
+        let spend_params = groth16::generate_random_parameters::<Bls12, _, _>(
+            Spend {
+                value_commitment: None,
+                proof_generation_key: None,
+                payment_address: None,
+                commitment_randomness: None,
+                ar: None,
+                auth_path: vec![None; 32],
+                anchor: None,
+            },
+            &mut OsRng,
+        )
+        .unwrap();
+        let spend_vk = groth16::prepare_verifying_key(&spend_params.vk);
 
         // TEST BEGINS
         let mut ctx = SaplingProvingContext::new();
@@ -493,6 +492,7 @@ mod test {
             diversifier,
             rseed,
             ar,
+            AssetType::new(b"").unwrap(),
             value,
             anchor,
             merkle_path,

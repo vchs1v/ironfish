@@ -12,7 +12,7 @@ use byteorder::{ByteOrder, LittleEndian, ReadBytesExt, WriteBytesExt};
 use ff::PrimeField;
 use jubjub::SubgroupPoint;
 use rand::{thread_rng, Rng};
-use zcash_primitives::sapling::{Note as SaplingNote, Nullifier, Rseed};
+use zcash_primitives::sapling::{asset_type::AssetType, Note as SaplingNote, Nullifier, Rseed};
 
 use std::{fmt, io, io::Read};
 
@@ -279,6 +279,7 @@ impl<'a> Note {
     /// being spent have to create these.
     fn sapling_note(&self) -> SaplingNote {
         SaplingNote {
+            asset_type: AssetType::new(b"").unwrap(),
             value: self.value,
             g_d: self.owner.diversifier.g_d().unwrap(),
             pk_d: self.owner.transmission_key,

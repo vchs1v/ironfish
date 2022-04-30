@@ -656,6 +656,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "itertools"
+version = "0.10.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a9a9d19fa1e79b6215ff29b9d6880b706147f16e9b1dbb1e4e5947b5b02bc5e3"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "jubjub"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1451,6 +1460,7 @@ dependencies = [
  "directories",
  "ff",
  "group",
+ "itertools",
  "jubjub",
  "lazy_static",
  "rand_core 0.6.3",
@@ -1477,8 +1487,3 @@ dependencies = [
  "syn",
  "synstructure",
 ]
-
-[[patch.unused]]
-name = "bellman"
-version = "0.8.1"
-source = "git+https://github.com/iron-fish/bellman?rev=368a62fb1821eaae495c60ada82d85faaea8b616#368a62fb1821eaae495c60ada82d85faaea8b616"
