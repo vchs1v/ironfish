@@ -426,7 +426,7 @@ mod test {
 
     #[test]
     fn test_masp_prover() {
-        // Need to fork to test properly: https://github.com/mat-if/librustzcash
+        // Need to clone locally to test properly - cargo is referencing it via local path: https://github.com/mat-if/librustzcash
 
         // USE PREBUILT PARAMS
         let sapling = sapling_bls12::SAPLING.clone();
