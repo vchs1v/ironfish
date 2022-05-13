@@ -1009,6 +1009,11 @@ export class PeerManager {
       return
     }
 
+    if (message.agent.includes('0.1.32')) {
+      console.log('Connection request from version 0.1.32, skipping this request')
+      peer.close(new Error(`outdated version, please upgrade to v0.1.33`))
+    }
+
     const identity = message.identity
     const version = message.version
     const agent = message.agent
